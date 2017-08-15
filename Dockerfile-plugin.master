@@ -1,0 +1,29 @@
+FROM golang:1.8-alpine
+MAINTAINER Abiola Ibrahim <abiola89@gmail.com>
+
+LABEL caddy_version="0.10.6" architecture="amd64"
+
+RUN apk add --no-cache openssh-client git tar curl
+
+RUN echo $GOPATH
+
+RUN go get github.com/mholt/caddy/caddy \
+ && cp $GOPATH/bin/caddy /usr/bin/caddy \
+ && chmod 0755 /usr/bin/caddy \
+ && /usr/bin/caddy -version
+
+RUN apk add --no-cache gcc g++ && \
+    go get github.com/abiosoft/caddyplug/caddyplug && \
+    caddyplug install realip && caddyplug install-caddy && \
+    /usr/bin/caddy --plugins && \
+    apk del gcc g++
+
+EXPOSE 80 443 2015
+VOLUME /root/.caddy
+WORKDIR /srv
+
+COPY Caddyfile /etc/Caddyfile
+COPY index.html /srv/index.html
+
+ENTRYPOINT ["/usr/bin/caddy"]
+CMD ["--conf", "/etc/Caddyfile", "--log", "stdout"]
